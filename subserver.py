@@ -51,17 +51,8 @@ def string_content(file):
         # for non-text files, enc will be None. In this case we return None,
         # and handle it in the caller.
         return None
-    if enc.startswith('UTF-'):
-        # character encoding 'UTF-8', 'UTF-8-SIG', 'UTF-16', 'UTF-32'
-        file_contents = file_contents.decode(enc)
-    elif enc.startswith('ISO-8859-'):
-        # character encoding 'ISO-8859-1' to 'ISO-8859-16'
-        file_contents = file_contents.decode(enc)
-    elif enc.startswith('Windows-125'):
-        # character encoding 'Windows-1250' to 'Windows-1258'
-        file_contents = file_contents.decode(enc)
     else:
-        file_contents = file_contents.decode('utf-8', errors='replace')
+        file_contents = file_contents.decode(enc, errors='replace')
 
     return file_contents
 
@@ -91,16 +82,25 @@ def upload_convert():
 
     else:
         inputfile = secure_filename(file.filename)
-        outputfile = name_output(inputfile, seconds)
+        from_ext = inputfile.rsplit('.', 1)[1].lower()
+        to_ext = request.form.get('to')
+        if not to_ext in ['srt', 'vtt']:
+            flash('Only converting to .srt or .vtt is supported.')
+            return home()
+
+        change_ext = False
+        if from_ext != to_ext:
+            change_ext = True
+        outputfile = name_output(inputfile, seconds, change_ext)
 
         string_contents = string_content(file)
         if not string_contents:
             flash('Unknown character encoding. Only select valid subtitle files.')
             return home()
         elif inputfile.endswith('.srt'):
-            result = convert_srt(string_contents, seconds)
+            result = convert_srt(string_contents, seconds, change_ext)
         else:
-            result = convert_vtt(string_contents, seconds)
+            result = convert_vtt(string_contents, seconds, change_ext)
         response = make_response(result)
 
         response_str = 'attachment; filename={}'.format(outputfile)
@@ -108,7 +108,7 @@ def upload_convert():
         return response
 
 
-def name_output(inputfile, seconds):
+def name_output(inputfile, seconds, change_ext):
     """
     Determines the name of the outputfile based on the inputfile and seconds;
     the name of the new file is identical to the old one, but prepended with '{+x.xx_Sec}_'.
@@ -153,11 +153,17 @@ def name_output(inputfile, seconds):
     # Determine the name of the outputfile by replacing
     # the increment number with the new one:
     outputfile = placeholder.format(incr)
+
+    if change_ext:
+        if outputfile.endswith('.srt'):
+            outputfile = outputfile.rsplit('.', 1)[0] + '.vtt'
+        else:
+            outputfile = outputfile.rsplit('.', 1)[0] + '.srt'
     
     return outputfile
 
 
-def convert_srt(file_contents, seconds):
+def convert_srt(file_contents, seconds, change_ext):
     """
     Loops through the given inputfile, modifies the lines consisting of the time encoding,
     and writes everything back to the 'new_content' string.
@@ -195,7 +201,7 @@ def convert_srt(file_contents, seconds):
             new_line = process_line(line, seconds)
             if new_line == '(DELETED)\n\n':
                 skip = True
-            else:
+            elif not change_ext:
                 # Convert back to '.srt' style:
                 new_line = new_line.replace('.', ',')
                 
@@ -219,7 +225,7 @@ def convert_srt(file_contents, seconds):
     return new_content
 
 
-def convert_vtt(file_contents, seconds):
+def convert_vtt(file_contents, seconds, change_ext):
     # import pdb; pdb.set_trace()
     content_list = []
     skip = False
@@ -231,6 +237,8 @@ def convert_vtt(file_contents, seconds):
             new_line = process_line(line, seconds)
             if new_line == '(DELETED)\n\n':
                 skip = True
+            elif change_ext:
+                new_line = new_line.replace('.', ',')
 
         else:
             # When skip = True, subtitles are shifted too far back into the past,

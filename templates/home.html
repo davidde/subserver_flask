@@ -9,28 +9,47 @@
         <div id="header">
             <div id="inner-header">
                 <h1>Movie Subtitle Modifier</h1>
-                <b>How this works:</b>
-                <ul>
-                    <li>Choose your subtitle file (<b>.srt</b> or <b>.vtt</b> extension).</li>
+                <b>How it works:</b>
+                <ol>
+                    <li>Choose your subtitle file; the extension should be either <b>.srt</b> or <b>.vtt</b>.</li>
                     <li>Enter the seconds by which to modify the subtitle time encoding.</li>
+                    <li>Choose the file type you want to convert to (.srt or .vtt).</li>
                     <li>Click convert; the modified subtitle should download automatically.</li>
-                </ul>
+                </ol>
             </div>
             <hr />
         </div>
-
+    
         <div id="main">
 
-            <h2>Convert Subtitle</h2>
-            <form name="form" action=/convert method=post enctype=multipart/form-data onsubmit="return checkFields();">
-                <input type="file" name="subtitlefile" id="subtitlefile" accept=".srt,.vtt" onchange="return validate();"/>
-                <select name=plusmin>
-                    <option value="1">+</option>
-                    <option value="-1">-</option>
-                </select>
-                <input type="number" step="0.01" min="0" max="600" name="seconds" id="seconds" placeholder="  seconds" />
-                <input type="submit" value="Convert"/>
-            </form>
+            <br> <h2 class="center">Convert Subtitle</h2> <br>
+            <form class="centerbox" name="form" action=/convert method=post enctype=multipart/form-data onsubmit="return checkFields();">
+                <ol>
+                    <li>
+                        <input type="file" name="subtitlefile" id="subtitlefile" accept=".srt,.vtt" onchange="return validate();"/>
+                    </li> <br><br>
+    
+                    <li>
+                        <select name=plusmin>
+                            <option value="1">+</option>
+                            <option value="-1">-</option>
+                        </select>
+                        <input type="number" step="0.01" min="0" max="600" name="seconds" id="seconds" placeholder="  seconds" />
+                    </li> <br>
+    
+                    <li>
+                        To:
+                        <select name=to>
+                            <option value="srt">srt</option>
+                            <option value="vtt">vtt</option>
+                        </select>
+                    </li> <br>
+    
+                    <li>
+                        <input type="submit" value="Convert"/>
+                    </li>
+                </ol>
+            </form> <br><br>
 
             <hr />
 
